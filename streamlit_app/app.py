@@ -30,3 +30,6 @@ if report_response.status_code == 200:
         st.write("---")
 else:
     st.error("투자 보고서를 가져오지 못했습니다.")
+
+st.header("종합 분석 / 투자 의견")
+st.markdown(report_data['investment_report'])
