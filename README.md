@@ -80,6 +80,5 @@ streamlit run streamlit_app/app.py
 ## 주의사항
 
 - `.env` 파일은 `.gitignore`에 포함되어 있어야 합니다.
-- GPT 요약 요청은 토큰이 많이 소모될 수 있습니다. 요약 기능은 토글로 켜고 끌 수 있습니다.
 
 ---
