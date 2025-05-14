@@ -150,3 +150,16 @@ def summarize_text(text):
         max_tokens=1000
     )
     return response.choices[0].message.content.strip()
+
+@app.get("/ohlcv")
+def get_ohlcv_endpoint():
+    return get_bitcoin_ohlcv()
+
+def get_bitcoin_ohlcv():
+    url = "https://api.upbit.com/v1/candles/days"
+    params = {"market": "KRW-BTC", "count": 7}
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return []
