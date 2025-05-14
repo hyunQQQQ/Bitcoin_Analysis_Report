@@ -1,10 +1,16 @@
 import requests
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from bs4 import BeautifulSoup
 import html
 from dotenv import load_dotenv
 import os
 import openai
+import asyncio
+from fastapi import WebSocket
+import time
+import json
+from fastapi import WebSocket, WebSocketDisconnect
+import asyncio
 
 # .env 환경변수 로드
 load_dotenv()
@@ -12,11 +18,9 @@ NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# OpenAI 클라이언트
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# 👉 뉴스 요약 기능 on/off 토글
-ENABLE_NEWS_SUMMARY = False  # True로 변경하면 요약 기능 활성화
+###ENABLE_NEWS_SUMMARY = False
 
 app = FastAPI()
 
@@ -74,18 +78,11 @@ def get_report():
         {combined_summary}
 
         이 요약을 기반으로, 다음 조건을 모두 만족하는 투자 의견서를 작성해 주세요:
-        1. 실제 증권사, 리서치 기관에서 발행하는 투자 보고서 형식        
-        2. 3문단 정도        
-        3. 문체: 전문적이고 객관적, 분석적인 문체
-        4. 내용:
-           - 현재 가격 동향 요약
-           - 주요 이슈 및 이벤트
-           - 시장 동향 분석
-           - 리스크 요인
-           - 종합적인 투자의견
-        5. 필요하다면 최근 알려진 시장 정보나 데이터는 인터넷 검색을 통해 보완한 듯한 내용 포함
-        6. 뉴스 내용 단순 요약이 아니라 → 뉴스 기반 해석/분석 포함        
-        7. 결과는 마크다운(Markdown) 형식으로 작성
+        - 실제 증권사, 리서치 기관에서 발행하는 투자 보고서 형식        
+        - 3문단 정도        
+        - 문체: 전문적이고 객관적, 분석적인 문체
+        - 내용: 현재 가격 동향, 주요 이슈, 시장 분석, 리스크 요인, 종합 의견
+        - 마크다운 형식으로
         """
     )
 
@@ -96,6 +93,31 @@ def get_report():
         "news": summarized_news,
         "investment_report": investment_comment
     }
+
+@app.get("/ohlcv")
+def get_ohlcv_endpoint():
+    return get_bitcoin_ohlcv()
+
+@app.websocket("/ws/price")
+async def websocket_price(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        try:
+            data = get_price()
+            await websocket.send_json(data)
+            await asyncio.sleep(1)
+        except Exception as e:
+            await websocket.close()
+            break
+
+def get_bitcoin_ohlcv():
+    url = "https://api.upbit.com/v1/candles/days"
+    params = {"market": "KRW-BTC", "count": 7}
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return []
 
 def get_naver_news_api():
     query = "비트코인"
@@ -120,11 +142,10 @@ def get_naver_news_api():
                     break
         return news_list
     else:
-        print(f"API 요청 실패: {response.status_code}")
         return []
 
 def get_article_content(url):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     article_body = (
@@ -138,9 +159,8 @@ def get_article_content(url):
         return ""
 
 def summarize_text(text):
-    if not text:    
+    if not text:
         return "본문 없음"
-
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -151,15 +171,35 @@ def summarize_text(text):
     )
     return response.choices[0].message.content.strip()
 
-@app.get("/ohlcv")
-def get_ohlcv_endpoint():
-    return get_bitcoin_ohlcv()
 
-def get_bitcoin_ohlcv():
+@app.websocket("/ws/price")
+async def websocket_price_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            url = "https://api.upbit.com/v1/ticker?markets=KRW-BTC"
+            response = requests.get(url)
+            data = response.json()[0]
+            await websocket.send_json({
+                "price": data["trade_price"],
+                "timestamp": data["timestamp"]
+            })
+            await asyncio.sleep(2)  # 2초마다 업데이트
+    except WebSocketDisconnect:
+        print("WebSocket 연결 종료됨")
+
+@app.get("/year_high_low")
+def get_year_high_low():
     url = "https://api.upbit.com/v1/candles/days"
-    params = {"market": "KRW-BTC", "count": 7}
+    params = {"market": "KRW-BTC", "count": 365}
     response = requests.get(url, params=params)
     if response.status_code == 200:
-        return response.json()
+        data = response.json()
+        highs = [day['high_price'] for day in data]
+        lows = [day['low_price'] for day in data]
+        return {
+            "52week_high": max(highs),
+            "52week_low": min(lows)
+        }
     else:
-        return []
+        return {"error": "데이터 조회 실패"}
