@@ -71,29 +71,54 @@ def get_report():
 
     combined_summary = "\n".join(all_summaries)
 
-    investment_comment = summarize_text(
-        f"""
-        당신은 비트코인 전문 리서치센터 소속 애널리스트입니다.
-        다음은 최근 비트코인 관련 뉴스 요약입니다:
+    # Structured Elements 기반 프롬프트
+    structured_prompt = f"""
+    너는 비트코인 전문 리서치센터의 시니어 애널리스트야.
 
-        {combined_summary}
+    다음은 최근 비트코인 관련 뉴스 요약이야:
 
-        이 요약을 기반으로, 다음 조건을 모두 만족하는 투자 의견서를 작성해 주세요:
-        - 실제 증권사, 리서치 기관에서 발행하는 투자 보고서 형식        
-        - 3문단 정도        
-        - 문체: 전문적이고 객관적, 분석적인 문체
-        - 내용: 현재 가격 동향, 주요 이슈, 시장 분석, 리스크 요인, 종합 의견
-        - 마크다운 형식으로
-        """
-    )
+    {combined_summary}
+
+    - 각 항목은 간결하고 분석적으로 작성하되, 
+    - 마지막 항목인 `final_opinion`은 전체 분석을 종합하는 핵심이므로 500자 정도로 심층적이고 구체적으로 작성해.
+    - 반드시 올바른 JSON 형식만 응답해.
+
+    {{
+      "price_trend": "비트코인 가격의 최근 흐름 요약",
+      "key_issues": "최근 주요 이슈와 뉴스 요약",
+      "market_analysis": "기술적 분석과 투자심리에 대한 평가",
+      "risk_factors": ["리스크 요인1", "리스크 요인2"],
+      "final_opinion": "최종 종합 의견 및 투자 전략"
+    }}
+    """
+
+    # GPT 호출
+    structured_response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "당신은 투자 리서치 전문가입니다."},
+            {"role": "user", "content": structured_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=1600
+    ).choices[0].message.content.strip()
+
+    try:
+        investment_json = json.loads(structured_response)
+    except json.JSONDecodeError:
+        investment_json = {
+            "error": "LLM이 JSON 형식을 따르지 않았습니다.",
+            "raw_response": structured_response
+        }
 
     price_data = get_price()
 
     return {
         "price": price_data,
         "news": summarized_news,
-        "investment_report": investment_comment
+        "investment_report": investment_json
     }
+
 
 @app.get("/ohlcv")
 def get_ohlcv_endpoint():
