@@ -16,4 +16,4 @@ if report_response.status_code == 200:
         st.write(f"요약: {news['summary']}")
         st.markdown("---")
 else:
-    st.error("❌ 뉴스 데이터를 가져오지 못했습니다.")
+    st.error("뉴스 데이터를 가져오지 못했습니다.")

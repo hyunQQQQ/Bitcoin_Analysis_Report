@@ -77,4 +77,4 @@ if ohlcv_response.status_code == 200:
     )
     st.plotly_chart(fig, use_container_width=True)
 else:
-    st.error("일봉차트트 데이터를 가져오지 못했습니다.")
+    st.error("일봉차트 데이터를 가져오지 못했습니다.")
