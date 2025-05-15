@@ -11,7 +11,7 @@ FastAPI 백엔드 + Streamlit 프론트엔드 기반으로 구성되며, 실시�
 - **Frontend**: Streamlit, Plotly
 - **데이터 출처**:
   - 업비트 API (실시간 가격, 일봉/주봉/월봉 차트)
-  - 네이버 뉴스 API (최신 비트코인 기사)
+  - 네이버 뉴스 API (최신 비트코인 관련 기사)
   - OpenAI GPT (뉴스 요약, 투자 의견 생성)
 
 ---
@@ -21,13 +21,14 @@ FastAPI 백엔드 + Streamlit 프론트엔드 기반으로 구성되며, 실시�
 ```
 Bitcoin_Analysis_Report/
 ├── app/                    # FastAPI 백엔드
-│   └── main.py
+│   ├── main.py
+│   └── __init__.py
 ├── streamlit_app/          # Streamlit 프론트엔드
 │   ├── app.py
 │   └── pages/
-│       ├── 1._가격정보.py
-│       ├── 2._뉴스_요약.py
-│       └── 3._종합_분석.py
+│       ├── 1_가격정보.py
+│       ├── 2_뉴스요약.py
+│       └── 3_투자의견.py
 ├── .env                    # API 키 저장
 ├── requirements.txt        # 패키지 목록
 └── README.md               # 설명 문서
@@ -70,10 +71,10 @@ streamlit run streamlit_app/app.py
 ##  주요 기능
 | 기능                 | 설명 |
 |----------------------|------|
-| 📈 실시간 가격 조회   | WebSocket을 통한 실시간 시세 표시 |
-| 🗞️ 비트코인 뉴스 요약 | 네이버 뉴스 + GPT 요약 |
-| 🧾 투자 보고서 생성   | GPT 기반 종합 분석 및 의견 자동 생성 |
-| 📉 캔들 차트 시각화   | Plotly로 최근 1개월 월봉 차트 표시 |
+| 실시간 가격 조회   | WebSocket을 통한 실시간 시세 표시 |
+| 비트코인 뉴스 요약 | 네이버 뉴스 + GPT 요약 |
+| 투자 보고서 생성   | GPT 기반 종합 분석 및 의견 자동 생성 |
+| 캔들 차트 시각화   | Plotly로 최근 1개월 월봉 차트 표시 |
 
 ---
 
