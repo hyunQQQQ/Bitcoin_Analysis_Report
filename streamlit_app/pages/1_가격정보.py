@@ -1,20 +1,16 @@
-#가격정보
 import streamlit as st
 import websocket
 import json
 import time
-import requests
 import plotly.graph_objects as go
-
-FASTAPI_URL = "http://localhost:8000"
+from streamlit_app.api import get_year_range, get_ohlcv
 
 st.title("실시간 비트코인 가격 정보")
 
 # 1. 52주 고가/저가
 st.subheader("📅 52주 최고가/최저가")
-year_range_response = requests.get(f"{FASTAPI_URL}/year_high_low")
-if year_range_response.status_code == 200:
-    year_range = year_range_response.json()
+year_range = get_year_range()
+if year_range:
     col1, col2 = st.columns(2)
     with col1:
         st.metric(label="📈 52주 최고가", value=f"{year_range['52week_high']:,} KRW")
@@ -46,12 +42,8 @@ except Exception as e:
 st.markdown("---")
 # 3. 최근 30일 일봉 기반 캔들차트
 st.subheader("📈 최근 30일 BTC Daily Chart")
-ohlcv_url = "https://api.upbit.com/v1/candles/days"
-params = {"market": "KRW-BTC", "count": 30}
-ohlcv_response = requests.get(ohlcv_url, params=params)
-if ohlcv_response.status_code == 200:
-    ohlcv_data = ohlcv_response.json()
-
+try:
+    ohlcv_data = get_ohlcv(30)
     dates = [item["candle_date_time_kst"][:10] for item in reversed(ohlcv_data)]
     opens = [item["opening_price"] for item in reversed(ohlcv_data)]
     highs = [item["high_price"] for item in reversed(ohlcv_data)]
@@ -73,8 +65,8 @@ if ohlcv_response.status_code == 200:
         yaxis_title="가격 (KRW)",
         xaxis_rangeslider_visible=False,
         height=500,
-        margin=dict(l=0, r=0, t=40, b=0)  # 좌우 여백 줄이기
+        margin=dict(l=0, r=0, t=40, b=0)
     )
     st.plotly_chart(fig, use_container_width=True)
-else:
+except Exception:
     st.error("일봉차트 데이터를 가져오지 못했습니다.")

@@ -1,15 +1,10 @@
-#뉴스요약약
 import streamlit as st
-import requests
-
-FASTAPI_URL = "http://localhost:8000"
+from streamlit_app.api import get_report
 
 st.title("최신 뉴스 및 요약")
 
-report_response = requests.get(f"{FASTAPI_URL}/report")
-if report_response.status_code == 200:
-    report_data = report_response.json()
-
+report_data = get_report()
+if report_data:
     for idx, news in enumerate(report_data['news']):
         st.markdown(f"### {idx+1}. {news['title']}")
         st.markdown(f"[기사 링크]({news['url']})")
