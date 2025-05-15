@@ -2,6 +2,7 @@
 
 FastAPI + Streamlit 기반의 비트코인 실시간 분석 및 투자 보고서 생성 프로젝트입니다.
 업비트 시세, 네이버 뉴스, OpenAI를 기반으로 실시간 정보 제공과 GPT 기반 투자 의견서를 생성합니다.
+git 레파지토리 : https://github.com/hyunQQQQ/Bitcoin_Analysis_Report.git
 
 ---
 

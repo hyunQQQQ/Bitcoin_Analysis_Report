@@ -3,19 +3,20 @@ import os
 import json
 from dotenv import load_dotenv
 
-# 환경 변수 로드
+# .env 파일에서 환경 변수 로드
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# OpenAI 클라이언트 초기화
+# OpenAI 클라이언트 설정
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 def summarize_text(text: str) -> str:
     """
-    주어진 텍스트를 한 문단으로 요약합니다.
+    입력 텍스트를 한 문단으로 요약
     """
     if not text:
         return "본문 없음"
+
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -28,7 +29,7 @@ def summarize_text(text: str) -> str:
 
 def generate_structured_report(summary: str) -> dict:
     """
-    요약된 뉴스를 기반으로 구조화된 투자 의견서를 생성합니다.
+    뉴스 요약을 기반으로 투자 보고서 JSON 생성
     """
     prompt = f"""
 너는 비트코인 전문 리서치센터의 시니어 애널리스트야.
