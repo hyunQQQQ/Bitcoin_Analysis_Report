@@ -20,7 +20,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-###ENABLE_NEWS_SUMMARY = False
+#뉴스요약 토글 
+ENABLE_NEWS_SUMMARY = True
 
 app = FastAPI()
 
