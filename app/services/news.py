@@ -18,15 +18,19 @@ def get_naver_news_api(query="비트코인", limit=10):
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
     }
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
+
+    try:
+        response = requests.get(url, headers=headers, timeout=5)
+        response.raise_for_status()
+        items = response.json().get('items', [])
+    except:
         return []
 
     news_list = []
-    for item in response.json().get('items', []):
-        if "n.news.naver.com" in item['link']:  # 네이버 뉴스만 필터링
-            title_unescaped = html.unescape(item['title'])  # HTML 이스케이프 해제
-            title_clean = BeautifulSoup(title_unescaped, "html.parser").get_text()  # HTML 태그 제거
+    for item in items:
+        if "n.news.naver.com" in item.get('link', ''):
+            title_unescaped = html.unescape(item.get('title', ''))
+            title_clean = BeautifulSoup(title_unescaped, "html.parser").get_text()
             news_list.append({
                 "title": title_clean,
                 "url": item['link']
@@ -41,13 +45,17 @@ def get_article_content(url):
     - 여러 버전의 기사 구조를 대응
     """
     headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    try:
+        response = requests.get(url, headers=headers, timeout=60)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-    article_body = (
-        soup.select_one('div#newsct_article') or
-        soup.select_one('div#articeBody') or
-        soup.select_one('div#articleBodyContents')
-    )
+        article_body = (
+            soup.select_one('div#newsct_article') or
+            soup.select_one('div#articeBody') or
+            soup.select_one('div#articleBodyContents')
+        )
 
-    return article_body.get_text(strip=True) if article_body else ""
+        return article_body.get_text(strip=True) if article_body else ""
+    except:
+        return ""

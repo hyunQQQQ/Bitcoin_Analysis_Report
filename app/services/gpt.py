@@ -2,6 +2,7 @@ import openai
 import os
 import json
 from dotenv import load_dotenv
+from openai import OpenAIError
 
 # .env 파일에서 환경 변수 로드
 load_dotenv()
@@ -17,15 +18,20 @@ def summarize_text(text: str) -> str:
     if not text:
         return "본문 없음"
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "다음 뉴스 기사를 한 문단으로 요약해줘."},
-            {"role": "user", "content": text}
-        ],
-        max_tokens=1000
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "다음 뉴스 기사를 한 문단으로 요약해줘."},
+                {"role": "user", "content": text}
+            ],
+            max_tokens=1000
+        )
+        return response.choices[0].message.content.strip()
+    except OpenAIError as e:
+        return f"[OpenAI 오류] {str(e)}"
+    except Exception as e:
+        return f"[요약 실패] {str(e)}"
 
 def generate_structured_report(summary: str) -> dict:
     """
@@ -50,17 +56,22 @@ final_opinion은 500자 정도로 심층적으로 작성해줘.
   "final_opinion": "최종 종합 의견 및 투자 전략"
 }}
 """
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "당신은 투자 리서치 전문가입니다."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.7,
-        max_tokens=1600
-    ).choices[0].message.content.strip()
-
     try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "당신은 투자 리서치 전문가입니다."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1800
+        ).choices[0].message.content.strip()
+
         return json.loads(response)
+
     except json.JSONDecodeError:
         return {"error": "JSON 파싱 실패", "raw_response": response}
+    except OpenAIError as e:
+        return {"error": "OpenAI API 오류", "message": str(e)}
+    except Exception as e:
+        return {"error": "예외 발생", "message": str(e)}

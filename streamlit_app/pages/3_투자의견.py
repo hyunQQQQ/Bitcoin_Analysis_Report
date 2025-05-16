@@ -1,35 +1,27 @@
 import streamlit as st
 from streamlit_app.api import get_report
 
-# 페이지 제목
 st.title("종합 분석 / 투자 의견")
 
-# FastAPI로부터 분석 리포트 데이터 수신
-report_data = get_report()
+with st.spinner("투자 리포트를 생성하는 중입니다..."):
+    report_data = get_report()
 
 if report_data:
     investment_report = report_data.get("investment_report")
 
-    # 투자 의견 데이터가 JSON 구조일 경우
     if isinstance(investment_report, dict) and "price_trend" in investment_report:
         st.markdown("### 가격 동향")
-        st.write(investment_report["price_trend"])
-
+        st.write(investment_report.get("price_trend", "데이터 없음"))
         st.markdown("### 주요 이슈")
-        st.write(investment_report["key_issues"])
-
+        st.write(investment_report.get("key_issues", "데이터 없음"))
         st.markdown("### 시장 분석")
-        st.write(investment_report["market_analysis"])
-
+        st.write(investment_report.get("market_analysis", "데이터 없음"))
         st.markdown("### 리스크 요인")
         for risk in investment_report.get("risk_factors", []):
             st.write(f"- {risk}")
-
         st.markdown("### 종합 의견")
-        st.write(investment_report["final_opinion"])
-    
-    # JSON 구조가 아닌 경우 (에러 응답 또는 단순 문자열)
+        st.write(investment_report.get("final_opinion", "데이터 없음"))
     else:
-        st.markdown(investment_report)
+        st.markdown(str(investment_report))
 else:
     st.error("투자 의견 데이터를 가져오지 못했습니다.")
